@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="4ae051ed-7874-4aa0-a046-e5fb3c00c6a0" Version="0.1" Language="en-US" Publisher="Dmitry Tretyakov" />
+    <DisplayName>Node.js Tools for Visual Studio</DisplayName>
+    <Description>Provides support for editing and debugging node.js applications.</Description>
+    <MoreInfo>https://github.com/dtretyakov/node-tools</MoreInfo>
+    <License>License.txt</License>
+    <GettingStartedGuide>https://github.com/dtretyakov/node-tools</GettingStartedGuide>
+    <Icon>Assets\Package.ico</Icon>
+    <PreviewImage>Assets\nodejs.png</PreviewImage>
+    <Tags>Node.js Web Debug</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="11.0" />
+    <InstallationTarget Version="11.0" Id="Microsoft.VisualStudio.Premium" />
+    <InstallationTarget Version="11.0" Id="Microsoft.VisualStudio.Ultimate" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="4.5" />
+    <Dependency Id="Microsoft.VisualStudio.MPF.11.0" DisplayName="Visual Studio MPF 11.0" d:Source="Installed" Version="11.0" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="Console" Path="|Console|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem" Path="|ProjectSystem|" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="%CurrentProject%" d:TargetPath="|%CurrentProject%;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+  </Assets>
+  <Content>
+    <ProjectTemplate>ProjectTemplates</ProjectTemplate>
+  </Content>
+</PackageManifest>

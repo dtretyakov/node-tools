@@ -1,0 +1,19 @@
+﻿<VSTemplate Version="2.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Node.js Empty Web Application</Name>
+    <Description>An empty project for creating a new node.js web application.</Description>
+    <Icon Package="{4ae051ed-7874-4aa0-a046-e5fb3c00c6a0}" ID="401" />
+    <ProjectType>JavaScript</ProjectType>
+    <ProjectSubType>Web</ProjectSubType>
+    <TemplateGroupID>Web</TemplateGroupID>
+    <TemplateID>NodeTools.JavaScript.EmptyWebApplication</TemplateID>
+    <DefaultName>NodeWebApplication</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="NodeEmptyProject.njsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" OpenInEditor="true">server.js</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>

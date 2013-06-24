@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9C25BE9E-41CC-4064-8305-0EE4FB45207A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DebugEngine</RootNamespace>
+    <AssemblyName>DebugEngine</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;DEV11</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\Program Files\Microsoft Visual Studio 2010 SDK\VisualStudioIntegration\Common\Assemblies\v2.0\Microsoft.VisualStudio.Debugger.Interop.10.0.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Debugger.InteropA, Version=8.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Microsoft.VisualStudio.Debugger.InteropA.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\packages\Newtonsoft.Json.5.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Common\AD7Guids.cs" />
+    <Compile Include="Common\Constants.cs" />
+    <Compile Include="Engine\AD7BoundBreakpoint.cs" />
+    <Compile Include="Engine\AD7BreakpointResolution.cs" />
+    <Compile Include="Engine\AD7DocumentContext.cs" />
+    <Compile Include="Engine\AD7EngineEventArgs.cs" />
+    <Compile Include="Engine\AD7Enums.cs" />
+    <Compile Include="Engine\AD7Events.cs" />
+    <Compile Include="Engine\AD7Expression.cs" />
+    <Compile Include="Engine\AD7ProgramProvider.cs" />
+    <Compile Include="Engine\AD7StackFrame.cs" />
+    <Compile Include="Engine\AD7MemoryAddress.cs" />
+    <Compile Include="Engine\AD7Module.cs" />
+    <Compile Include="Engine\AD7ProgramNode.cs" />
+    <Compile Include="Engine\AD7Property.cs" />
+    <Compile Include="Engine\AD7Thread.cs" />
+    <Compile Include="Common\AD7Hresult.cs" />
+    <Compile Include="Engine\AD7PendingBreakpoint.cs" />
+    <Compile Include="Engine\DebuggerConstants.cs" />
+    <Compile Include="Management\BreakpointManager.cs" />
+    <Compile Include="Engine\AD7Engine.cs" />
+    <Compile Include="DebugConstants.cs" />
+    <Compile Include="Node\BreakpointEventArgs.cs" />
+    <Compile Include="Node\BreakpointHitEventArgs.cs" />
+    <Compile Include="Node\Debugger\Communication\CompileScriptMessageEventArgs.cs" />
+    <Compile Include="Node\Debugger\Communication\ExceptionMessageEventArgs.cs" />
+    <Compile Include="Node\Debugger\Serialization\BacktraceMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\BacktraceVariableProvider.cs" />
+    <Compile Include="Node\Debugger\Serialization\BreakpointMessage.cs" />
+    <Compile Include="Node\Debugger\Communication\BreakpointMessageEventArgs.cs" />
+    <Compile Include="Node\Debugger\Serialization\ClearBreakpointMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\ChangeBreakpointMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\CompileScriptMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\FrameMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\ExceptionMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\NewValueVariableProvider.cs" />
+    <Compile Include="Node\Debugger\Serialization\RawValueJsonConverter.cs" />
+    <Compile Include="Node\Debugger\Serialization\RawValue.cs" />
+    <Compile Include="Node\Debugger\Serialization\VersionMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\PropertyAttribute.cs" />
+    <Compile Include="Node\Debugger\Serialization\PropertyType.cs" />
+    <Compile Include="Node\Debugger\Serialization\SetVariableValueMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\IEventMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\SuspendMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\LookupPrototypeProvider.cs" />
+    <Compile Include="Node\Debugger\Serialization\SetExceptionBreakMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\SetBreakpointMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\ContinueMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\EvaluateMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\EvaluateVariableProvider.cs" />
+    <Compile Include="Node\Debugger\Serialization\IVariableProvider.cs" />
+    <Compile Include="Node\Debugger\Serialization\IResponseMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\LookupMessage.cs" />
+    <Compile Include="Node\Debugger\Serialization\LookupVariableProvider.cs" />
+    <Compile Include="Node\Debugger\Communication\NodeDebuggerClient.cs" />
+    <Compile Include="Node\Debugger\Serialization\NodeEventMessage.cs" />
+    <Compile Include="Node\Debugger\NodeMessageFactory.cs" />
+    <Compile Include="Node\Debugger\Serialization\ResponseMessageBase.cs" />
+    <Compile Include="Node\DebugConnectionListener.cs" />
+    <Compile Include="Node\ExceptionRaisedEventArgs.cs" />
+    <Compile Include="Node\Debugger\Communication\IDebuggerConnection.cs" />
+    <Compile Include="Node\Debugger\IDebuggerManager.cs" />
+    <Compile Include="Node\Debugger\NodeDebuggerManager.cs" />
+    <Compile Include="Node\ModuleLoadedEventArgs.cs" />
+    <Compile Include="Node\NodeBreakpoint.cs" />
+    <Compile Include="Node\Debugger\Communication\NodeDebuggerConnection.cs" />
+    <Compile Include="Node\Debugger\Communication\StringEventArgs.cs" />
+    <Compile Include="Node\NodeExpressionType.cs" />
+    <Compile Include="Node\OutputEventArgs.cs" />
+    <Compile Include="Node\ProcessExitedEventArgs.cs" />
+    <Compile Include="Node\NodeEvaluationResult.cs" />
+    <Compile Include="Node\NodeException.cs" />
+    <Compile Include="Node\NodeScript.cs" />
+    <Compile Include="Node\NodeProcess.cs" />
+    <Compile Include="Node\NodeStackFrame.cs" />
+    <Compile Include="Node\NodeThread.cs" />
+    <Compile Include="Node\ThreadEventArgs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Management\EngineUtils.cs" />
+    <Compile Include="Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Key.snk" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{9be18ff8-d777-4c89-8c0f-4af990dbe0e7}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+</Project>
