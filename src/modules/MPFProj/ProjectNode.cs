@@ -58,7 +58,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
 using Microsoft.Build.BackEnd;
@@ -67,7 +66,6 @@ using Microsoft.Build.Execution;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using ProjectSystem.Infrastructure;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using MSBuild = Microsoft.Build.Evaluation;
@@ -3471,26 +3469,6 @@ namespace Microsoft.VisualStudio.Project
         /// <returns>S_OK for success, or an error message</returns>
         protected virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
         {
-            return CanOverwriteExistingItem(originalFileName, computedNewFileName, false);
-        }
-
-        const int E_CANCEL_FILE_ADD = unchecked((int)0xA0010001);      // Severity = Error, Customer Bit set, Facility = 1, Error = 1
-
-        /// <summary>
-        /// Checks to see if the user wants to overwrite the specified file name.  
-        /// 
-        /// Returns:
-        ///     E_ABORT if we disallow the user to overwrite the file
-        ///     OLECMDERR_E_CANCELED if the user wants to cancel
-        ///     S_OK if the user wants to overwrite
-        ///     E_CANCEL_FILE_ADD (0xA0010001) if the user doesn't want to overwrite and wants to abort the larger transaction
-        /// </summary>
-        /// <param name="originalFileName"></param>
-        /// <param name="computedNewFileName"></param>
-        /// <param name="canCancel"></param>
-        /// <returns></returns>
-        protected virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName, bool canCancel)
-        {
             if (String.IsNullOrEmpty(originalFileName) || String.IsNullOrEmpty(computedNewFileName))
             {
                 return VSConstants.E_INVALIDARG;
@@ -3518,19 +3496,11 @@ namespace Microsoft.VisualStudio.Project
 
 
             // File already exists in project... message box
-            message = String.Format(SR.GetString(SR.FileAlreadyInProject, CultureInfo.CurrentUICulture), Path.GetFileName(originalFileName));
+            message = SR.GetString(SR.FileAlreadyInProject, CultureInfo.CurrentUICulture);
             icon = OLEMSGICON.OLEMSGICON_QUERY;
             buttons = OLEMSGBUTTON.OLEMSGBUTTON_YESNO;
-            if (canCancel)
-            {
-                buttons = OLEMSGBUTTON.OLEMSGBUTTON_YESNOCANCEL;
-            }
             int msgboxResult = VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
-            if (msgboxResult == NativeMethods.IDCANCEL)
-            {
-                return (int)E_CANCEL_FILE_ADD;
-            }
-            else if (msgboxResult != NativeMethods.IDYES)
+            if (msgboxResult != NativeMethods.IDYES)
             {
                 return (int)OleConstants.OLECMDERR_E_CANCELED;
             }
@@ -3777,10 +3747,8 @@ namespace Microsoft.VisualStudio.Project
             // Define a set for our build items. The value does not really matter here.
             Dictionary<String, MSBuild.ProjectItem> items = new Dictionary<String, MSBuild.ProjectItem>();
 
-            var buildItems = buildProject.Items.ToList();
-
             // Process Files
-            foreach (MSBuild.ProjectItem item in buildItems)
+            foreach (MSBuild.ProjectItem item in this.buildProject.Items)
             {
                 // Ignore the item if it is a reference or folder
                 if (this.FilterItemTypeToBeAddedToHierarchy(item.ItemType))
@@ -4791,14 +4759,6 @@ namespace Microsoft.VisualStudio.Project
             return VSConstants.S_OK;
         }
 
-        public override bool CanAddFiles
-        {
-            get
-            {
-                return true;
-            }
-        }
-
 
         public virtual int AddItem(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, VSADDRESULT[] result)
         {
@@ -4830,12 +4790,6 @@ namespace Microsoft.VisualStudio.Project
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public virtual int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result)
         {
-            return AddItemWithSpecificInternal(itemIdLoc, op, itemName, filesToOpen, files, dlgOwner, editorFlags, ref editorType, physicalView, ref logicalView, result);
-        }
-
-        // TODO: Refactor me into something sane
-        internal int AddItemWithSpecificInternal(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result, bool alwaysCopy = false, bool? promptOverwrite = null)
-        {
             if (files == null || result == null || files.Length == 0 || result.Length == 0)
             {
                 return VSConstants.E_INVALIDARG;
@@ -4850,20 +4804,18 @@ namespace Microsoft.VisualStudio.Project
                 return VSConstants.E_INVALIDARG;
             }
 
-            while (!n.CanAddFiles && (!this.CanFileNodesHaveChilds || !(n is FileNode)))
+            while ((!(n is ProjectNode)) && (!(n is FolderNode)) && (!this.CanFileNodesHaveChilds || !(n is FileNode)))
             {
                 n = n.Parent;
             }
             Debug.Assert(n != null, "We should at this point have either a ProjectNode or FolderNode or a FileNode as a container for the new filenodes");
 
             // handle link and runwizard operations at this point
-            bool isLink = false;
             switch (op)
             {
                 case VSADDITEMOPERATION.VSADDITEMOP_LINKTOFILE:
                     // we do not support this right now
-                    isLink = true;
-                    break;
+                    throw new NotImplementedException("VSADDITEMOP_LINKTOFILE");
 
                 case VSADDITEMOPERATION.VSADDITEMOP_RUNWIZARD:
                     result[0] = this.RunWizard(n, itemName, files[0], dlgOwner);
@@ -4894,25 +4846,14 @@ namespace Microsoft.VisualStudio.Project
                 {
                     case VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE:
                         {
-                            string fileName = Path.GetFileName(itemName ?? file);
-                            newFileName = CommonUtils.GetAbsoluteFilePath(baseDir, fileName);
+                            string fileName = Path.GetFileName(itemName);
+                            newFileName = Path.Combine(baseDir, fileName);
                         }
                         break;
-                    case VSADDITEMOPERATION.VSADDITEMOP_LINKTOFILE:
                     case VSADDITEMOPERATION.VSADDITEMOP_OPENFILE:
                         {
                             string fileName = Path.GetFileName(file);
-                            newFileName = CommonUtils.GetAbsoluteFilePath(baseDir, fileName);
-
-                            var friendlyPath = CommonUtils.CreateFriendlyFilePath(ProjectFolder, file);
-
-                            if (isLink && CommonUtils.IsSubpathOf(ProjectFolder, file))
-                            {
-                                // creating a link to a file that's actually in the project, it's not really a link.
-                                isLink = false;
-                                newFileName = file;
-                                n = this.CreateFolderNodes(Path.GetDirectoryName(file));
-                            }
+                            newFileName = Path.Combine(baseDir, fileName);
                         }
                         break;
                 }
@@ -4937,7 +4878,6 @@ namespace Microsoft.VisualStudio.Project
             {
                 HierarchyNode child;
                 bool overwrite = false;
-                ProjectElement linkedFile = null;
                 string newFileName = filesToAdd[index];
 
                 string file = files[index];
@@ -4947,229 +4887,77 @@ namespace Microsoft.VisualStudio.Project
                 if (child != null)
                 {
                     // If the file to be added is an existing file part of the hierarchy then continue.
-                    if (CommonUtils.IsSamePath(file, newFileName))
+                    if (NativeMethods.IsSamePath(file, newFileName))
                     {
-                        if (!alwaysCopy)
-                        {
-                            result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                            continue;
-                        }
-                        else
-                        {
-                            string tmpName = CommonUtils.GetAbsoluteFilePath(Path.GetDirectoryName(newFileName), Path.GetFileNameWithoutExtension(newFileName) + " - Copy" + Path.GetExtension(newFileName));
-                            if (File.Exists(tmpName))
-                            {
-                                int count = 2;
-                                while (File.Exists(GetIncrementedFileName(newFileName, count)))
-                                {
-                                    count++;
-                                }
-                                newFileName = GetIncrementedFileName(newFileName, count);
-                            }
-                            else
-                            {
-                                newFileName = tmpName;
-                            }
-                        }
-                    }
-                    else if (isLink)
-                    {
-                        string message = "There is already a file of the same name in this folder.";
-                        string title = string.Empty;
-                        OLEMSGICON icon = OLEMSGICON.OLEMSGICON_QUERY;
-                        OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
-                        OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
-
-                        VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
-
                         result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                        return (int)OleConstants.OLECMDERR_E_CANCELED;
-                    }
-                    else if (!(child is FolderNode && Directory.Exists(file)))
-                    {
-                        if (promptOverwrite != null && !promptOverwrite.Value)
-                        {
-                            continue;
-                        }
-
-                        int canOverWriteExistingItem = CanOverwriteExistingItem(file, newFileName, promptOverwrite != null && promptOverwrite.Value);
-                        if (canOverWriteExistingItem == E_CANCEL_FILE_ADD)
-                        {
-                            result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                            return (int)OleConstants.OLECMDERR_E_CANCELED;
-                        }
-                        else if (canOverWriteExistingItem == (int)OleConstants.OLECMDERR_E_CANCELED)
-                        {
-                            result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                            if (promptOverwrite != null && promptOverwrite.Value)
-                            {
-                                continue;
-                            }
-                            return canOverWriteExistingItem;
-                        }
-                        else if (canOverWriteExistingItem == VSConstants.S_OK)
-                        {
-                            overwrite = true;
-                        }
-                        else
-                        {
-                            return canOverWriteExistingItem;
-                        }
-                    }
-                }
-                else
-                {
-                    if (isLink)
-                    {
-                        child = this.FindChild(file);
-                        if (child != null)
-                        {
-                            string message = String.Format("There is already a link to '{0}'. A project cannot have more than one link to the same file.", file);
-                            string title = string.Empty;
-                            OLEMSGICON icon = OLEMSGICON.OLEMSGICON_QUERY;
-                            OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
-                            OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
-
-                            VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
-
-                            result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                            return (int)OleConstants.OLECMDERR_E_CANCELED;
-                        }
+                        continue;
                     }
 
-                    // we need to figure out where this file would be added and make sure there's
-                    // not an existing link node at the same location
-                    string filename = Path.GetFileName(newFileName);
-                    var folder = this.FindChild(Path.GetDirectoryName(newFileName));
-                    if (folder != null)
+                    int canOverWriteExistingItem = this.CanOverwriteExistingItem(file, newFileName);
+
+                    if (canOverWriteExistingItem == (int)OleConstants.OLECMDERR_E_CANCELED)
                     {
-                        for (var folderChild = folder.FirstChild; folderChild != null; folderChild = folderChild.NextSibling)
-                        {
-                            if (Path.GetFileName(folderChild.Url) == filename)
-                            {
-                                string message = "There is already a file of the same name in this folder.";
-                                string title = string.Empty;
-                                OLEMSGICON icon = OLEMSGICON.OLEMSGICON_QUERY;
-                                OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
-                                OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
-
-                                VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
-
-                                result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                                return (int)OleConstants.OLECMDERR_E_CANCELED;
-                            }
-                        }
+                        result[0] = VSADDRESULT.ADDRESULT_Cancel;
+                        return canOverWriteExistingItem;
+                    }
+                    else if (canOverWriteExistingItem == VSConstants.S_OK)
+                    {
+                        overwrite = true;
+                    }
+                    else
+                    {
+                        return canOverWriteExistingItem;
                     }
                 }
 
                 // If the file to be added is not in the same path copy it.
-                if (!CommonUtils.IsSamePath(file, newFileName))
+                if (NativeMethods.IsSamePath(file, newFileName) == false)
                 {
                     if (!overwrite && File.Exists(newFileName))
                     {
-                        var existingChild = this.FindChild(file);
-                        if (existingChild == null || !existingChild.IsLinkFile)
+                        string message = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileAlreadyExists, CultureInfo.CurrentUICulture), newFileName);
+                        string title = string.Empty;
+                        OLEMSGICON icon = OLEMSGICON.OLEMSGICON_QUERY;
+                        OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_YESNO;
+                        OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
+                        int messageboxResult = VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
+                        if (messageboxResult == NativeMethods.IDNO)
                         {
-                            string message = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileAlreadyExists, CultureInfo.CurrentUICulture), newFileName);
-                            string title = string.Empty;
-                            OLEMSGICON icon = OLEMSGICON.OLEMSGICON_QUERY;
-                            OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_YESNO;
-                            OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
-                            if (isLink)
-                            {
-                                message = "There is already a file of the same name in this folder.";
-                                buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
-                            }
-
-                            int messageboxResult = VsShellUtilities.ShowMessageBox(this.Site, title, message, icon, buttons, defaultButton);
-                            if (messageboxResult != NativeMethods.IDYES)
-                            {
-                                result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                                return (int)OleConstants.OLECMDERR_E_CANCELED;
-                            }
+                            result[0] = VSADDRESULT.ADDRESULT_Cancel;
+                            return (int)OleConstants.OLECMDERR_E_CANCELED;
                         }
                     }
 
-                    var updatingNode = this.FindChild(file);
-                    if (updatingNode != null && updatingNode.IsLinkFile)
+                    // Copy the file to the correct location.
+                    // We will suppress the file change events to be triggered to this item, since we are going to copy over the existing file and thus we will trigger a file change event. 
+                    // We do not want the filechange event to ocur in this case, similar that we do not want a file change event to occur when saving a file.
+                    IVsFileChangeEx fileChange = this.site.GetService(typeof(SVsFileChangeEx)) as IVsFileChangeEx;
+                    if (fileChange == null)
                     {
-                        // we just need to update the link to the new path.
-                        linkedFile = updatingNode.ItemNode;
+                        throw new InvalidOperationException();
                     }
-                    else if (Directory.Exists(file))
+
+                    try
                     {
-                        // http://pytools.codeplex.com/workitem/546
-                        return AddDirectory(result, n, file, promptOverwrite);
+                        ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 1));
+                        if (op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
+                        {
+                            this.AddFileFromTemplate(file, newFileName);
+                        }
+                        else
+                        {
+                            PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
+                        }
                     }
-                    else if (!isLink)
+                    finally
                     {
-                        // Copy the file to the correct location.
-                        // We will suppress the file change events to be triggered to this item, since we are going to copy over the existing file and thus we will trigger a file change event. 
-                        // We do not want the filechange event to ocur in this case, similar that we do not want a file change event to occur when saving a file.
-                        IVsFileChangeEx fileChange = this.site.GetService(typeof(SVsFileChangeEx)) as IVsFileChangeEx;
-                        Utilities.CheckNotNull(fileChange);
-
-                        try
-                        {
-                            ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 1));
-                            if (op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
-                            {
-                                this.AddFileFromTemplate(file, newFileName);
-                            }
-                            else
-                            {
-                                PackageUtilities.CopyUrlToLocal(new Uri(file), newFileName);
-
-                                // Reset RO attribute on file if present - for example, if source file was under TFS control and not checked out.
-                                try
-                                {
-                                    var fileInfo = new FileInfo(newFileName);
-                                    if (fileInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
-                                    {
-                                        fileInfo.Attributes &= ~FileAttributes.ReadOnly;
-                                    }
-                                }
-                                catch (Exception)
-                                {
-                                    // Best-effort, but no big deal if this fails.
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 0));
-                        }
+                        ErrorHandler.ThrowOnFailure(fileChange.IgnoreFile(VSConstants.VSCOOKIE_NIL, newFileName, 0));
                     }
                 }
 
                 if (overwrite)
                 {
                     this.OverwriteExistingItem(child);
-                }
-                else if (linkedFile != null || isLink)
-                {
-                    // files not moving, add the old name, and set the link.
-                    var friendlyPath = CommonUtils.GetRelativeFilePath(ProjectFolder, file);
-                    FileNode newChild;
-                    if (linkedFile == null)
-                    {
-                        Debug.Assert(!CommonUtils.IsSubpathOf(ProjectFolder, file), "Should have cleared isLink above for file in project dir");
-                        newChild = CreateFileNode(file);
-                    }
-                    else
-                    {
-                        newChild = CreateFileNode(linkedFile);
-                    }
-
-                    newChild.SetIsLinkFile(true);
-                    newChild.ItemNode.SetMetadata(ProjectFileConstants.Link, CommonUtils.CreateFriendlyFilePath(ProjectFolder, newFileName));
-                    n.AddChild(newChild);
-
-                    DocumentManager.RenameDocument(site, file, file, n.ID);
-
-                    LinkFileAdded(file);
-
-                    SetProjectFileDirty(true);
                 }
                 else
                 {
@@ -5220,108 +5008,6 @@ namespace Microsoft.VisualStudio.Project
             }
 
             return VSConstants.S_OK;
-        }
-
-        protected virtual void LinkFileAdded(string filename)
-        {
-        }
-
-        private static string GetIncrementedFileName(string newFileName, int count)
-        {
-            return CommonUtils.GetAbsoluteFilePath(Path.GetDirectoryName(newFileName), Path.GetFileNameWithoutExtension(newFileName) + " - Copy (" + count + ")" + Path.GetExtension(newFileName));
-        }
-
-        /// <summary>
-        /// Adds a folder into the project recursing and adding any sub-files and sub-directories.
-        /// 
-        /// The user can be prompted to overwrite the existing files if the folder already exists
-        /// in the project.  They will be initially prompted to overwrite - if they answer no t
-        /// we'll set promptOverwrite to false and when we recurse we won't prompt.  If they say
-        /// yes then we'll set it to true and we will prompt for individual files.  
-        /// </summary>
-        private int AddDirectory(VSADDRESULT[] result, HierarchyNode n, string file, bool? promptOverwrite)
-        {
-            // need to recursively add all of the directory contents
-            var fullPath = Path.Combine(GetBaseDirectoryForAddingFiles(n), Path.GetFileName(file));
-            HierarchyNode targetFolder = n.FindChild(fullPath, false);
-            if (targetFolder == null)
-            {
-                
-                var newChild = CreateFolderNode(fullPath);
-                n.AddChild(newChild);
-                targetFolder = newChild;
-            }
-            else if (promptOverwrite == null)
-            {
-                var res = MessageBox.Show(
-                    String.Format(
-                    @"This folder already contains a folder called '{0}'.
-
-If the files in the existing folder have the same names as files in the folder you are copying, do you want to replace the existing files?", Path.GetFileName(file)),
-                    "Merge Folders",
-                    MessageBoxButtons.YesNoCancel
-                );
-
-                // yes means prompt for each file
-                // no means don't prompt for any of the files
-                // cancel means forget what I'm doing
-
-                switch (res)
-                {
-                    case DialogResult.Cancel:
-                        result[0] = VSADDRESULT.ADDRESULT_Cancel;
-                        return (int)OleConstants.OLECMDERR_E_CANCELED;
-                    case DialogResult.No:
-                        promptOverwrite = false;
-                        return VSConstants.S_OK;
-                    case DialogResult.Yes:
-                        promptOverwrite = true;
-                        break;
-                }
-            }
-
-            // add the files...
-            var dirFiles = Directory.GetFiles(file);
-            Guid empty = Guid.Empty;
-
-            var subRes = AddItemWithSpecificInternal(
-                targetFolder.ID,
-                VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE,
-                null,
-                (uint)dirFiles.Length,
-                dirFiles,
-                IntPtr.Zero,
-                0,
-                ref empty,
-                null,
-                ref empty,
-                result,
-                promptOverwrite: promptOverwrite
-            );
-
-            if (ErrorHandler.Failed(subRes))
-            {
-                return subRes;
-            }
-
-            // add any subdirectories...
-
-            var subDirs = Directory.GetDirectories(file);
-
-            return AddItemWithSpecificInternal(
-                targetFolder.ID,
-                VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE,
-                null,
-                (uint)subDirs.Length,
-                subDirs,
-                IntPtr.Zero,
-                0,
-                ref empty,
-                null,
-                ref empty,
-                result,
-                promptOverwrite: promptOverwrite
-            );
         }
 
         /// <summary>

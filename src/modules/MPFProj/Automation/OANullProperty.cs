@@ -48,38 +48,44 @@ a particular purpose and non-infringement.
 
 using System;
 using System.Runtime.InteropServices;
-using EnvDTE;
 
 namespace Microsoft.VisualStudio.Project.Automation
 {
     /// <summary>
-    ///     This object defines a so called null object that is returned as instead of null. This is because callers in VSCore usually crash if a null propery is returned for them.
+    /// This object defines a so called null object that is returned as instead of null. This is because callers in VSCore usually crash if a null propery is returned for them.
     /// </summary>
     [CLSCompliant(false), ComVisible(true)]
-    public class OANullProperty : Property
+    public class OANullProperty : EnvDTE.Property
     {
-        private readonly OAProperties _parent;
+        #region fields
+        private OAProperties parent;
+        #endregion
+
+        #region ctors
 
         public OANullProperty(OAProperties parent)
         {
-            _parent = parent;
+            this.parent = parent;
         }
+        #endregion
+
+        #region EnvDTE.Property
 
         public object Application
         {
             get { return String.Empty; }
         }
 
-        public Properties Collection
+        public EnvDTE.Properties Collection
         {
             get
             {
                 //todo: EnvDTE.Property.Collection
-                return _parent;
+                return this.parent;
             }
         }
 
-        public DTE DTE
+        public EnvDTE.DTE DTE
         {
             get { return null; }
         }
@@ -106,17 +112,20 @@ namespace Microsoft.VisualStudio.Project.Automation
 
         public object Object
         {
-            get { return _parent.Target; }
-            set { }
+            get { return this.parent.Target; }
+            set
+            {
+            }
         }
 
-        public Properties Parent
+        public EnvDTE.Properties Parent
         {
-            get { return _parent; }
+            get { return this.parent; }
         }
 
         public void set_IndexedValue(object index1, object index2, object index3, object index4, object value)
         {
+
         }
 
         public object Value
@@ -124,5 +133,6 @@ namespace Microsoft.VisualStudio.Project.Automation
             get { return String.Empty; }
             set { }
         }
+        #endregion
     }
 }

@@ -56,27 +56,28 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using EnvDTE;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
 using IServiceProvider = System.IServiceProvider;
 using MSBuild = Microsoft.Build.Evaluation;
+using VSRegistry = Microsoft.VisualStudio.Shell.VSRegistry;
 
 namespace Microsoft.VisualStudio.Project
 {
     public static class Utilities
     {
         private const string defaultMSBuildVersion = "4.0";
-        private static readonly char[] curlyBraces = new[] {'{', '}'};
 
         /// <summary>
-        ///     Look in the registry under the current hive for the path
-        ///     of MSBuild
+        /// Look in the registry under the current hive for the path
+        /// of MSBuild
         /// </summary>
         /// <returns></returns>
         [CLSCompliant(false)]
@@ -88,7 +89,7 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Search the registry for the tools path for MSBuild.
+        /// Search the registry for the tools path for MSBuild.
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
         /// <param name="version">Msbuild version.</param>
@@ -97,15 +98,15 @@ namespace Microsoft.VisualStudio.Project
         public static string GetMsBuildPath(IServiceProvider serviceProvider, string version)
         {
             string msBuildPath = null;
-            using (RegistryKey root = VSRegistry.RegistryRoot(serviceProvider, __VsLocalRegistryType.RegType_Configuration, false))
+            using(RegistryKey root = VSRegistry.RegistryRoot(serviceProvider, __VsLocalRegistryType.RegType_Configuration, false))
             {
                 // Get the value from the registry
-                using (RegistryKey vsKey = root.OpenSubKey("MSBuild", false))
+                using(RegistryKey vsKey = root.OpenSubKey("MSBuild", false))
                 {
-                    msBuildPath = (string) vsKey.GetValue("MSBuildBinPath", null);
+                    msBuildPath = (string)vsKey.GetValue("MSBuildBinPath", null);
                 }
             }
-            if (!string.IsNullOrEmpty(msBuildPath))
+            if(!string.IsNullOrEmpty(msBuildPath))
             {
                 return msBuildPath;
             }
@@ -113,11 +114,11 @@ namespace Microsoft.VisualStudio.Project
             // The path to MSBuild was not found in the VisualStudio's registry hive, so try to
             // find it in the new MSBuild hive.
             string registryPath = string.Format(CultureInfo.InvariantCulture, "Software\\Microsoft\\MSBuild\\ToolsVersions\\{0}", version);
-            using (RegistryKey msbuildKey = Registry.LocalMachine.OpenSubKey(registryPath, false))
+            using(Microsoft.Win32.RegistryKey msbuildKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(registryPath, false))
             {
-                msBuildPath = (string) msbuildKey.GetValue("MSBuildToolsPath", null);
+                msBuildPath = (string)msbuildKey.GetValue("MSBuildToolsPath", null);
             }
-            if (string.IsNullOrEmpty(msBuildPath))
+            if(string.IsNullOrEmpty(msBuildPath))
             {
                 string error = SR.GetString(SR.ErrorMsBuildRegistration, CultureInfo.CurrentUICulture);
                 throw new FileLoadException(error);
@@ -126,7 +127,7 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Is Visual Studio in design mode.
+        /// Is Visual Studio in design mode.
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
         /// <returns>true if visual studio is in design mode</returns>
@@ -137,7 +138,7 @@ namespace Microsoft.VisualStudio.Project
                 throw new ArgumentNullException("site");
             }
 
-            var selectionMonitor = site.GetService(typeof (IVsMonitorSelection)) as IVsMonitorSelection;
+            IVsMonitorSelection selectionMonitor = site.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
             uint cookie = 0;
             int active = 0;
             Guid designContext = VSConstants.UICONTEXT_DesignMode;
@@ -148,20 +149,20 @@ namespace Microsoft.VisualStudio.Project
 
         /// <include file='doc\VsShellUtilities.uex' path='docs/doc[@for="Utilities.IsInAutomationFunction"]/*' />
         /// <devdoc>
-        ///     Is an extensibility object executing an automation function.
+        /// Is an extensibility object executing an automation function.
         /// </devdoc>
         /// <param name="serviceProvider">The service provider.</param>
         /// <returns>true if the extensiblity object is executing an automation function.</returns>
         public static bool IsInAutomationFunction(IServiceProvider serviceProvider)
         {
-            if (serviceProvider == null)
+            if(serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
 
-            var extensibility = serviceProvider.GetService(typeof (IVsExtensibility)) as IVsExtensibility3;
+            IVsExtensibility3 extensibility = serviceProvider.GetService(typeof(EnvDTE.IVsExtensibility)) as IVsExtensibility3;
 
-            if (extensibility == null)
+            if(extensibility == null)
             {
                 throw new InvalidOperationException();
             }
@@ -171,22 +172,22 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Creates a semicolon delinited list of strings. This can be used to provide the properties for VSHPROPID_CfgPropertyPagesCLSIDList, VSHPROPID_PropertyPagesCLSIDList, VSHPROPID_PriorityPropertyPagesCLSIDList
+        /// Creates a semicolon delinited list of strings. This can be used to provide the properties for VSHPROPID_CfgPropertyPagesCLSIDList, VSHPROPID_PropertyPagesCLSIDList, VSHPROPID_PriorityPropertyPagesCLSIDList
         /// </summary>
         /// <param name="guids">An array of Guids.</param>
         /// <returns>A semicolon delimited string, or null</returns>
         [CLSCompliant(false)]
         public static string CreateSemicolonDelimitedListOfStringFromGuids(Guid[] guids)
         {
-            if (guids == null || guids.Length == 0)
+            if(guids == null || guids.Length == 0)
             {
                 return null;
             }
 
             // Create a StringBuilder with a pre-allocated buffer big enough for the
             // final string. 39 is the length of a GUID in the "B" form plus the final ';'
-            var stringList = new StringBuilder(39*guids.Length);
-            for (int i = 0; i < guids.Length; i++)
+            StringBuilder stringList = new StringBuilder(39 * guids.Length);
+            for(int i = 0; i < guids.Length; i++)
             {
                 stringList.Append(guids[i].ToString("B"));
                 stringList.Append(";");
@@ -195,24 +196,25 @@ namespace Microsoft.VisualStudio.Project
             return stringList.ToString().TrimEnd(';');
         }
 
+        private static char[] curlyBraces = new char[] { '{', '}' };
         /// <summary>
-        ///     Take list of guids as a single string and generate an array of Guids from it
+        /// Take list of guids as a single string and generate an array of Guids from it
         /// </summary>
         /// <param name="guidList">Semi-colon separated list of Guids</param>
         /// <returns>Array of Guids</returns>
         [CLSCompliant(false)]
         public static Guid[] GuidsArrayFromSemicolonDelimitedStringOfGuids(string guidList)
         {
-            if (guidList == null)
+            if(guidList == null)
             {
                 return null;
             }
 
-            var guids = new List<Guid>();
+            List<Guid> guids = new List<Guid>();
             string[] guidsStrings = guidList.Split(';');
-            foreach (string guid in guidsStrings)
+            foreach(string guid in guidsStrings)
             {
-                if (!String.IsNullOrEmpty(guid))
+                if(!String.IsNullOrEmpty(guid))
                     guids.Add(new Guid(guid.Trim(curlyBraces)));
             }
 
@@ -220,8 +222,8 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Validates a file path by validating all file parts. If the
-        ///     the file name is invalid it throws an exception if the project is in automation. Otherwise it shows a dialog box with the error message.
+        /// Validates a file path by validating all file parts. If the 
+        /// the file name is invalid it throws an exception if the project is in automation. Otherwise it shows a dialog box with the error message.
         /// </summary>
         /// <param name="serviceProvider">The service provider</param>
         /// <param name="filePath">A full path to a file name</param>
@@ -229,23 +231,23 @@ namespace Microsoft.VisualStudio.Project
         public static void ValidateFileName(IServiceProvider serviceProvider, string filePath)
         {
             string errorMessage = String.Empty;
-            if (String.IsNullOrEmpty(filePath))
+            if(String.IsNullOrEmpty(filePath))
             {
                 errorMessage = SR.GetString(SR.ErrorInvalidFileName, CultureInfo.CurrentUICulture);
             }
-            else if (filePath.Length > NativeMethods.MAX_PATH)
+            else if(filePath.Length > NativeMethods.MAX_PATH)
             {
                 errorMessage = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.PathTooLong, CultureInfo.CurrentUICulture), filePath);
             }
-            else if (ContainsInvalidFileNameChars(filePath))
+            else if(ContainsInvalidFileNameChars(filePath))
             {
                 errorMessage = SR.GetString(SR.ErrorInvalidFileName, CultureInfo.CurrentUICulture);
             }
 
-            if (errorMessage.Length == 0)
+            if(errorMessage.Length == 0)
             {
                 string fileName = Path.GetFileName(filePath);
-                if (String.IsNullOrEmpty(fileName) || IsFileNameInvalid(fileName))
+                if(String.IsNullOrEmpty(fileName) || IsFileNameInvalid(fileName))
                 {
                     errorMessage = SR.GetString(SR.ErrorInvalidFileName, CultureInfo.CurrentUICulture);
                 }
@@ -254,22 +256,22 @@ namespace Microsoft.VisualStudio.Project
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
 
                     // If there is no filename or it starts with a leading dot issue an error message and quit.
-                    if (String.IsNullOrEmpty(fileNameWithoutExtension) || fileNameWithoutExtension[0] == '.')
+                    if(String.IsNullOrEmpty(fileNameWithoutExtension) || fileNameWithoutExtension[0] == '.')
                     {
                         errorMessage = SR.GetString(SR.FileNameCannotContainALeadingPeriod, CultureInfo.CurrentUICulture);
                     }
                 }
             }
 
-            if (errorMessage.Length > 0)
+            if(errorMessage.Length > 0)
             {
                 // If it is not called from an automation method show a dialog box.
-                if (!IsInAutomationFunction(serviceProvider))
+                if(!Utilities.IsInAutomationFunction(serviceProvider))
                 {
                     string title = null;
-                    var icon = OLEMSGICON.OLEMSGICON_CRITICAL;
-                    var buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
-                    var defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
+                    OLEMSGICON icon = OLEMSGICON.OLEMSGICON_CRITICAL;
+                    OLEMSGBUTTON buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK;
+                    OLEMSGDEFBUTTON defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST;
                     VsShellUtilities.ShowMessageBox(serviceProvider, title, errorMessage, icon, buttons, defaultButton);
                 }
                 else
@@ -277,11 +279,12 @@ namespace Microsoft.VisualStudio.Project
                     throw new InvalidOperationException(errorMessage);
                 }
             }
+
         }
 
         /// <summary>
-        ///     Creates a CALPOLESTR from a list of strings
-        ///     It is the responsability of the caller to release this memory.
+        /// Creates a CALPOLESTR from a list of strings 
+        /// It is the responsability of the caller to release this memory.
         /// </summary>
         /// <param name="guids"></param>
         /// <returns>A CALPOLESTR that was created from the the list of strings.</returns>
@@ -289,22 +292,22 @@ namespace Microsoft.VisualStudio.Project
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CALPOLESTR")]
         public static CALPOLESTR CreateCALPOLESTR(IList<string> strings)
         {
-            var calpolStr = new CALPOLESTR();
+            CALPOLESTR calpolStr = new CALPOLESTR();
 
-            if (strings != null)
+            if(strings != null)
             {
                 // Demand unmanaged permissions in order to access unmanaged memory.
                 new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
 
-                calpolStr.cElems = (uint) strings.Count;
+                calpolStr.cElems = (uint)strings.Count;
 
-                int size = Marshal.SizeOf(typeof (IntPtr));
+                int size = Marshal.SizeOf(typeof(IntPtr));
 
-                calpolStr.pElems = Marshal.AllocCoTaskMem(strings.Count*size);
+                calpolStr.pElems = Marshal.AllocCoTaskMem(strings.Count * size);
 
                 IntPtr ptr = calpolStr.pElems;
 
-                foreach (string aString in strings)
+                foreach(string aString in strings)
                 {
                     IntPtr tempPtr = Marshal.StringToCoTaskMemUni(aString);
                     Marshal.WriteIntPtr(ptr, tempPtr);
@@ -316,8 +319,8 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Creates a CADWORD from a list of tagVsSccFilesFlags. Memory is allocated for the elems.
-        ///     It is the responsability of the caller to release this memory.
+        /// Creates a CADWORD from a list of tagVsSccFilesFlags. Memory is allocated for the elems. 
+        /// It is the responsability of the caller to release this memory.
         /// </summary>
         /// <param name="guids"></param>
         /// <returns>A CADWORD created from the list of tagVsSccFilesFlags.</returns>
@@ -325,24 +328,24 @@ namespace Microsoft.VisualStudio.Project
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CADWORD")]
         public static CADWORD CreateCADWORD(IList<tagVsSccFilesFlags> flags)
         {
-            var cadWord = new CADWORD();
+            CADWORD cadWord = new CADWORD();
 
-            if (flags != null)
+            if(flags != null)
             {
                 // Demand unmanaged permissions in order to access unmanaged memory.
                 new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
 
-                cadWord.cElems = (uint) flags.Count;
+                cadWord.cElems = (uint)flags.Count;
 
-                int size = Marshal.SizeOf(typeof (UInt32));
+                int size = Marshal.SizeOf(typeof(UInt32));
 
-                cadWord.pElems = Marshal.AllocCoTaskMem(flags.Count*size);
+                cadWord.pElems = Marshal.AllocCoTaskMem(flags.Count * size);
 
                 IntPtr ptr = cadWord.pElems;
 
-                foreach (tagVsSccFilesFlags flag in flags)
+                foreach(tagVsSccFilesFlags flag in flags)
                 {
-                    Marshal.WriteInt32(ptr, (int) flag);
+                    Marshal.WriteInt32(ptr, (int)flag);
                     ptr = new IntPtr(ptr.ToInt64() + size);
                 }
             }
@@ -351,45 +354,45 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Splits a bitmap from a Stream into an ImageList
+        /// Splits a bitmap from a Stream into an ImageList
         /// </summary>
         /// <param name="imageStream">A Stream representing a Bitmap</param>
         /// <returns>An ImageList object representing the images from the given stream</returns>
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public static ImageList GetImageList(Stream imageStream)
         {
-            var ilist = new ImageList();
+            ImageList ilist = new ImageList();
 
-            if (imageStream == null)
+            if(imageStream == null)
             {
                 return ilist;
             }
             ilist.ColorDepth = ColorDepth.Depth24Bit;
             ilist.ImageSize = new Size(16, 16);
-            var bitmap = new Bitmap(imageStream);
+            Bitmap bitmap = new Bitmap(imageStream);
             ilist.Images.AddStrip(bitmap);
             ilist.TransparentColor = Color.Magenta;
             return ilist;
         }
 
         /// <summary>
-        ///     Splits a bitmap from a pointer to an ImageList
+        /// Splits a bitmap from a pointer to an ImageList
         /// </summary>
         /// <param name="imageListAsPointer">A pointer to a bitmap of images to split</param>
         /// <returns>An ImageList object representing the images from the given stream</returns>
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public static ImageList GetImageList(object imageListAsPointer)
         {
             ImageList images = null;
 
-            var intPtr = new IntPtr((int) imageListAsPointer);
-            var hImageList = new HandleRef(null, intPtr);
+            IntPtr intPtr = new IntPtr((int)imageListAsPointer);
+            HandleRef hImageList = new HandleRef(null, intPtr);
             int count = UnsafeNativeMethods.ImageList_GetImageCount(hImageList);
 
-            if (count > 0)
+            if(count > 0)
             {
                 // Create a bitmap big enough to hold all the images
-                var b = new Bitmap(16*count, 16);
+                Bitmap b = new Bitmap(16 * count, 16);
                 Graphics g = Graphics.FromImage(b);
 
                 // Loop through and extract each image from the imagelist into our own bitmap
@@ -397,15 +400,15 @@ namespace Microsoft.VisualStudio.Project
                 try
                 {
                     hDC = g.GetHdc();
-                    var handleRefDC = new HandleRef(null, hDC);
-                    for (int i = 0; i < count; i++)
+                    HandleRef handleRefDC = new HandleRef(null, hDC);
+                    for(int i = 0; i < count; i++)
                     {
-                        UnsafeNativeMethods.ImageList_Draw(hImageList, i, handleRefDC, i*16, 0, NativeMethods.ILD_NORMAL);
+                        UnsafeNativeMethods.ImageList_Draw(hImageList, i, handleRefDC, i * 16, 0, NativeMethods.ILD_NORMAL);
                     }
                 }
                 finally
                 {
-                    if (g != null && hDC != IntPtr.Zero)
+                    if(g != null && hDC != IntPtr.Zero)
                     {
                         g.ReleaseHdc(hDC);
                     }
@@ -421,34 +424,35 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Gets the active configuration name.
+        /// Gets the active configuration name.
         /// </summary>
         /// <param name="automationObject">The automation object.</param>
-        /// <returns>The name of the active configuartion.</returns>
+        /// <returns>The name of the active configuartion.</returns>		
         internal static string GetActiveConfigurationName(EnvDTE.Project automationObject)
         {
-            if (automationObject == null)
+            if(automationObject == null)
             {
                 throw new ArgumentNullException("automationObject");
             }
 
             string currentConfigName = string.Empty;
-            if (automationObject.ConfigurationManager != null)
+            if(automationObject.ConfigurationManager != null)
             {
-                Configuration activeConfig = automationObject.ConfigurationManager.ActiveConfiguration;
-                if (activeConfig != null)
+                EnvDTE.Configuration activeConfig = automationObject.ConfigurationManager.ActiveConfiguration;
+                if(activeConfig != null)
                 {
                     currentConfigName = activeConfig.ConfigurationName;
                 }
             }
             return currentConfigName;
+
         }
 
 
         /// <summary>
-        ///     Verifies that two objects represent the same instance of a COM object.
-        ///     This essentially compares the IUnkown pointers of the 2 objects.
-        ///     This is needed in scenario where aggregation is involved.
+        /// Verifies that two objects represent the same instance of a COM object.
+        /// This essentially compares the IUnkown pointers of the 2 objects.
+        /// This is needed in scenario where aggregation is involved.
         /// </summary>
         /// <param name="obj1">Can be an object, interface or IntPtr</param>
         /// <param name="obj2">Can be an object, interface or IntPtr</param>
@@ -462,32 +466,33 @@ namespace Microsoft.VisualStudio.Project
             try
             {
                 // If we have 2 null, then they are not COM objects and as such "it's not the same COM object"
-                if (obj1 != null && obj2 != null)
+                if(obj1 != null && obj2 != null)
                 {
                     unknown1 = QueryInterfaceIUnknown(obj1);
                     unknown2 = QueryInterfaceIUnknown(obj2);
 
-                    isSame = Equals(unknown1, unknown2);
+                    isSame = IntPtr.Equals(unknown1, unknown2);
                 }
             }
             finally
             {
-                if (unknown1 != IntPtr.Zero)
+                if(unknown1 != IntPtr.Zero)
                 {
                     Marshal.Release(unknown1);
                 }
 
-                if (unknown2 != IntPtr.Zero)
+                if(unknown2 != IntPtr.Zero)
                 {
                     Marshal.Release(unknown2);
                 }
+
             }
 
             return isSame;
         }
 
         /// <summary>
-        ///     Retrieve the IUnknown for the managed or COM object passed in.
+        /// Retrieve the IUnknown for the managed or COM object passed in.
         /// </summary>
         /// <param name="objToQuery">Managed or COM object.</param>
         /// <returns>Pointer to the IUnknown interface of the object.</returns>
@@ -498,9 +503,9 @@ namespace Microsoft.VisualStudio.Project
             IntPtr result;
             try
             {
-                if (objToQuery is IntPtr)
+                if(objToQuery is IntPtr)
                 {
-                    unknown = (IntPtr) objToQuery;
+                    unknown = (IntPtr)objToQuery;
                 }
                 else
                 {
@@ -516,54 +521,55 @@ namespace Microsoft.VisualStudio.Project
             }
             finally
             {
-                if (releaseIt && unknown != IntPtr.Zero)
+                if(releaseIt && unknown != IntPtr.Zero)
                 {
                     Marshal.Release(unknown);
                 }
+
             }
 
             return result;
         }
 
         /// <summary>
-        ///     Returns true if thename that can represent a path, absolut or relative, or a file name contains invalid filename characters.
+        /// Returns true if thename that can represent a path, absolut or relative, or a file name contains invalid filename characters.
         /// </summary>
         /// <param name="name">File name</param>
         /// <returns>true if file name is invalid</returns>
-        [SuppressMessage("Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "0",
-            Justification = "The name is validated.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "0",
+            Justification="The name is validated.")]
         public static bool ContainsInvalidFileNameChars(string name)
         {
-            if (String.IsNullOrEmpty(name))
+            if(String.IsNullOrEmpty(name))
             {
                 return true;
             }
 
             try
             {
-                if (Path.IsPathRooted(name) && !name.StartsWith(@"\\", StringComparison.Ordinal))
+                if(Path.IsPathRooted(name) && !name.StartsWith(@"\\", StringComparison.Ordinal))
                 {
                     string root = Path.GetPathRoot(name);
                     name = name.Substring(root.Length);
                 }
             }
-                // The Path methods used by ContainsInvalidFileNameChars return argument exception if the filePath contains invalid characters.
-            catch (ArgumentException)
+            // The Path methods used by ContainsInvalidFileNameChars return argument exception if the filePath contains invalid characters.
+            catch(ArgumentException)
             {
                 return true;
             }
 
-            var uri = new Url(name);
+            Microsoft.VisualStudio.Shell.Url uri = new Microsoft.VisualStudio.Shell.Url(name);
 
             // This might be confusing bur Url.IsFile means that the uri represented by the name is either absolut or relative.
-            if (uri.IsFile)
+            if(uri.IsFile)
             {
                 string[] segments = uri.Segments;
-                if (segments != null && segments.Length > 0)
+                if(segments != null && segments.Length > 0)
                 {
-                    foreach (string segment in segments)
+                    foreach(string segment in segments)
                     {
-                        if (IsFilePartInValid(segment))
+                        if(IsFilePartInValid(segment))
                         {
                             return true;
                         }
@@ -572,7 +578,7 @@ namespace Microsoft.VisualStudio.Project
                     // Now the last segment should be specially taken care, since that cannot be all dots or spaces.
                     string lastSegment = segments[segments.Length - 1];
                     string filePart = Path.GetFileNameWithoutExtension(lastSegment);
-                    if (IsFileNameAllGivenCharacter('.', filePart) || IsFileNameAllGivenCharacter(' ', filePart))
+                    if(IsFileNameAllGivenCharacter('.', filePart) || IsFileNameAllGivenCharacter(' ', filePart))
                     {
                         return true;
                     }
@@ -582,7 +588,7 @@ namespace Microsoft.VisualStudio.Project
             {
                 // The assumption here is that we got a file name.
                 string filePart = Path.GetFileNameWithoutExtension(name);
-                if (IsFileNameAllGivenCharacter('.', filePart) || IsFileNameAllGivenCharacter(' ', filePart))
+                if(IsFileNameAllGivenCharacter('.', filePart) || IsFileNameAllGivenCharacter(' ', filePart))
                 {
                     return true;
                 }
@@ -600,22 +606,23 @@ namespace Microsoft.VisualStudio.Project
         /// <returns>True if the file is valid.</returns>
         public static bool IsFileNameInvalid(string fileName)
         {
-            if (String.IsNullOrEmpty(fileName))
+            if(String.IsNullOrEmpty(fileName))
             {
                 return true;
             }
 
-            if (IsFileNameAllGivenCharacter('.', fileName) || IsFileNameAllGivenCharacter(' ', fileName))
+            if(IsFileNameAllGivenCharacter('.', fileName) || IsFileNameAllGivenCharacter(' ', fileName))
             {
                 return true;
             }
 
 
             return IsFilePartInValid(fileName);
+
         }
 
         /// <summary>
-        ///     Helper method to call a converter explicitely to convert to an enum type
+        /// Helper method to call a converter explicitely to convert to an enum type
         /// </summary>
         /// <typeparam name="T">THe enum to convert to</typeparam>
         /// <typeparam name="V">The converter that will be created</typeparam>
@@ -628,11 +635,11 @@ namespace Microsoft.VisualStudio.Project
             where T : struct
         {
             EnumConverter converter = GetEnumConverter<T>();
-            if (converter == null)
+            if(converter == null)
             {
                 return null;
             }
-            if (converter.CanConvertTo(typeToConvert))
+            if(converter.CanConvertTo(typeToConvert))
             {
                 return converter.ConvertTo(null, culture, value, typeToConvert);
             }
@@ -641,38 +648,38 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Helper method for converting from a string to an enum using a converter.
+        /// Helper method for converting from a string to an enum using a converter.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <param name="culture">The culture to use to read the localized strings</param>
         /// <returns></returns>
         [CLSCompliant(false)]
-        public static T? ConvertFromType<T>(string value, CultureInfo culture)
+        public static Nullable<T> ConvertFromType<T>(string value, CultureInfo culture)
             where T : struct
         {
-            var returnValue = new T?();
+            Nullable<T> returnValue = new Nullable<T>();
 
             returnValue = returnValue.GetValueOrDefault();
 
-            if (value == null)
+            if(value == null)
             {
                 return returnValue;
             }
 
             EnumConverter converter = GetEnumConverter<T>();
-            if (converter == null)
+            if(converter == null)
             {
                 return returnValue;
             }
 
-            if (converter.CanConvertFrom(value.GetType()))
+            if(converter.CanConvertFrom(value.GetType()))
             {
                 object converted = converter.ConvertFrom(null, culture, value);
 
-                if (converted != null && (converted is T))
+                if(converted != null && (converted is T))
                 {
-                    returnValue = (T) converted;
+                    returnValue = (T)converted;
                 }
             }
 
@@ -681,7 +688,7 @@ namespace Microsoft.VisualStudio.Project
 
 
         /// <summary>
-        ///     Sets a string value from an enum
+        /// Sets a string value from an enum
         /// </summary>
         /// <typeparam name="T">The enum type</typeparam>
         /// <param name="enumValue">The value of teh enum.</param>
@@ -690,9 +697,9 @@ namespace Microsoft.VisualStudio.Project
         public static string SetStringValueFromConvertedEnum<T>(T enumValue, CultureInfo culture)
             where T : struct
         {
-            var convertToType = ConvertToType(enumValue, typeof (string), culture) as string;
+            string convertToType = ConvertToType<T>(enumValue, typeof(string), culture) as string;
 
-            if (convertToType == null)
+            if(convertToType == null)
             {
                 return String.Empty;
             }
@@ -702,14 +709,14 @@ namespace Microsoft.VisualStudio.Project
 
 
         /// <summary>
-        ///     Initializes the in memory project. Sets BuildEnabled on the project to true.
+        /// Initializes the in memory project. Sets BuildEnabled on the project to true.
         /// </summary>
         /// <param name="engine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <returns>A loaded msbuild project.</returns>
         internal static MSBuild.Project InitializeMsBuildProject(MSBuild.ProjectCollection buildEngine, string fullProjectPath)
         {
-            if (String.IsNullOrEmpty(fullProjectPath))
+            if(String.IsNullOrEmpty(fullProjectPath))
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "fullProjectPath");
             }
@@ -719,19 +726,19 @@ namespace Microsoft.VisualStudio.Project
 
 
             // Check if the project already has been loaded with the fullProjectPath. If yes return the build project associated to it.
-            var loadedProject = new List<MSBuild.Project>(buildEngine.GetLoadedProjects(fullProjectPath));
+            List<MSBuild.Project> loadedProject = new List<MSBuild.Project>(buildEngine.GetLoadedProjects(fullProjectPath));
             MSBuild.Project buildProject = loadedProject != null && loadedProject.Count > 0 && loadedProject[0] != null ? loadedProject[0] : null;
 
-            if (buildProject == null)
+            if(buildProject == null)
             {
-                buildProject = buildEngine.LoadProject(fullProjectPath);
+               buildProject = buildEngine.LoadProject(fullProjectPath);
             }
 
             return buildProject;
         }
 
         /// <summary>
-        ///     Loads a project file for the file. If the build project exists and it was loaded with a different file then it is unloaded first.
+        /// Loads a project file for the file. If the build project exists and it was loaded with a different file then it is unloaded first. 
         /// </summary>
         /// <param name="engine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
@@ -742,34 +749,34 @@ namespace Microsoft.VisualStudio.Project
             // If we have a build project that has been loaded with another file unload it.
             try
             {
-                if (exitingBuildProject != null && exitingBuildProject.ProjectCollection != null && !NativeMethods.IsSamePath(exitingBuildProject.FullPath, fullProjectPath))
+                if(exitingBuildProject != null && exitingBuildProject.ProjectCollection != null && !NativeMethods.IsSamePath(exitingBuildProject.FullPath, fullProjectPath))
                 {
                     buildEngine.UnloadProject(exitingBuildProject);
                 }
             }
-                // We  catch Invalid operation exception because if the project was unloaded while we touch the ParentEngine the msbuild API throws. 
-                // Is there a way to figure out that a project was unloaded?
-            catch (InvalidOperationException)
+            // We  catch Invalid operation exception because if the project was unloaded while we touch the ParentEngine the msbuild API throws. 
+            // Is there a way to figure out that a project was unloaded?
+            catch(InvalidOperationException)
             {
             }
 
-            return InitializeMsBuildProject(buildEngine, fullProjectPath);
+            return Utilities.InitializeMsBuildProject(buildEngine, fullProjectPath);
         }
 
         /// <summary>
-        ///     Initialize the build engine. Sets the build enabled property to true. The engine is initialzed if the passed in engine is null or does not have its bin path set.
+        /// Initialize the build engine. Sets the build enabled property to true. The engine is initialzed if the passed in engine is null or does not have its bin path set.
         /// </summary>
         /// <param name="engine">An instance of MSBuild.ProjectCollection build engine, that will be checked if initialized.</param>
         /// <param name="engine">The service provider.</param>
         /// <returns>The buildengine to use.</returns>
         internal static MSBuild.ProjectCollection InitializeMsBuildEngine(MSBuild.ProjectCollection existingEngine, IServiceProvider serviceProvider)
         {
-            if (serviceProvider == null)
+            if(serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
 
-            if (existingEngine == null)
+            if(existingEngine == null)
             {
                 MSBuild.ProjectCollection buildEngine = MSBuild.ProjectCollection.GlobalProjectCollection;
                 return buildEngine;
@@ -779,7 +786,7 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Get the outer T implementation
+        /// Get the outer T implementation
         /// </summary>
         internal static T GetOuterAs<T>(object o)
             where T : class
@@ -791,7 +798,7 @@ namespace Microsoft.VisualStudio.Project
 
             try
             {
-                hierarchy = (T) Marshal.GetTypedObjectForIUnknown(projectUnknown, typeof (T));
+                hierarchy = (T)Marshal.GetTypedObjectForIUnknown(projectUnknown, typeof(T));
             }
             finally
             {
@@ -805,22 +812,23 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Gets an instance of an EnumConverter for enums that have PropertyPageTypeConverter attribute
+        /// Gets an instance of an EnumConverter for enums that have PropertyPageTypeConverter attribute
         /// </summary>
         /// <typeparam name="T">The type to search for the PropertyPageTypeConverter attribute.</typeparam>
         /// <returns>An instance of an enum converter, or null if none found.</returns>
         private static EnumConverter GetEnumConverter<T>()
             where T : struct
         {
-            object[] attributes = typeof (T).GetCustomAttributes(typeof (PropertyPageTypeConverterAttribute), true);
+            object[] attributes = typeof(T).GetCustomAttributes(typeof(PropertyPageTypeConverterAttribute), true);
 
             // There should be only one PropertyPageTypeConverterAttribute defined on T
-            if (attributes != null && attributes.Length == 1)
+            if(attributes != null && attributes.Length == 1)
             {
-                Debug.Assert(attributes[0] is PropertyPageTypeConverterAttribute, "The returned attribute must be an attribute is PropertyPageTypeConverterAttribute");
-                var converterAttribute = (PropertyPageTypeConverterAttribute) attributes[0];
 
-                if (converterAttribute.ConverterType.IsSubclassOf(typeof (EnumConverter)))
+                Debug.Assert(attributes[0] is PropertyPageTypeConverterAttribute, "The returned attribute must be an attribute is PropertyPageTypeConverterAttribute");
+                PropertyPageTypeConverterAttribute converterAttribute = (PropertyPageTypeConverterAttribute)attributes[0];
+
+                if(converterAttribute.ConverterType.IsSubclassOf(typeof(EnumConverter)))
                 {
                     return Activator.CreateInstance(converterAttribute.ConverterType) as EnumConverter;
                 }
@@ -829,16 +837,15 @@ namespace Microsoft.VisualStudio.Project
             return null;
         }
 
-        /// <summary>
-        ///     >
-        ///     Checks if the file name is all the given character.
+        /// <summary>>
+        /// Checks if the file name is all the given character.
         /// </summary>
         private static bool IsFileNameAllGivenCharacter(char c, string fileName)
         {
             // A valid file name cannot be all "c" .
             int charFound = 0;
-            for (charFound = 0; charFound < fileName.Length && fileName[charFound] == c; ++charFound) ;
-            if (charFound >= fileName.Length)
+            for(charFound = 0; charFound < fileName.Length && fileName[charFound] == c; ++charFound) ;
+            if(charFound >= fileName.Length)
             {
                 return true;
             }
@@ -847,13 +854,13 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Checks whether a file part contains valid characters. The file part can be any part of a non rooted path.
+        /// Checks whether a file part contains valid characters. The file part can be any part of a non rooted path.
         /// </summary>
         /// <param name="filePart"></param>
         /// <returns></returns>
         private static bool IsFilePartInValid(string filePart)
         {
-            if (String.IsNullOrEmpty(filePart))
+            if(String.IsNullOrEmpty(filePart))
             {
                 return true;
             }
@@ -871,19 +878,19 @@ namespace Microsoft.VisualStudio.Project
             {
                 extension = Path.GetExtension(filePart);
             }
-                // We catch the ArgumentException because we want this method to return true if the filename is not valid. FilePart could be for example #�&%"�&"% and that would throw ArgumentException on GetExtension
-            catch (ArgumentException)
+            // We catch the ArgumentException because we want this method to return true if the filename is not valid. FilePart could be for example #�&%"�&"% and that would throw ArgumentException on GetExtension
+            catch(ArgumentException)
             {
                 return true;
             }
 
-            if (!String.IsNullOrEmpty(extension))
+            if(!String.IsNullOrEmpty(extension))
             {
                 // Check the extension first
                 String regexToUseForExtension = invalidChars;
-                var unsafeCharactersRegex = new Regex(regexToUseForExtension, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                Regex unsafeCharactersRegex = new Regex(regexToUseForExtension, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 bool isMatch = unsafeCharactersRegex.IsMatch(extension);
-                if (isMatch)
+                if(isMatch)
                 {
                     return isMatch;
                 }
@@ -892,55 +899,56 @@ namespace Microsoft.VisualStudio.Project
                 // We cannot use GetFileNameWithoutExtension because it might be that for example (..\\filename.txt) is passed in asnd that should fail, since that is not a valid filename.
                 fileNameToVerify = filePart.Substring(0, filePart.Length - extension.Length);
 
-                if (String.IsNullOrEmpty(fileNameToVerify))
+                if(String.IsNullOrEmpty(fileNameToVerify))
                 {
                     return true;
                 }
             }
 
             // We verify CLOCK$ outside the regex since for some reason the regex is not matching the clock\\$ added.
-            if (String.Compare(fileNameToVerify, "CLOCK$", StringComparison.OrdinalIgnoreCase) == 0)
+            if(String.Compare(fileNameToVerify, "CLOCK$", StringComparison.OrdinalIgnoreCase) == 0)
             {
                 return true;
             }
 
-            var unsafeFileNameCharactersRegex = new Regex(regexToUseForFileName, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            Regex unsafeFileNameCharactersRegex = new Regex(regexToUseForFileName, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             return unsafeFileNameCharactersRegex.IsMatch(fileNameToVerify);
         }
 
         /// <summary>
-        ///     Copy a directory recursively to the specified non-existing directory
+        /// Copy a directory recursively to the specified non-existing directory
         /// </summary>
         /// <param name="source">Directory to copy from</param>
         /// <param name="target">Directory to copy to</param>
         public static void RecursivelyCopyDirectory(string source, string target)
         {
             // Make sure it doesn't already exist
-            if (Directory.Exists(target))
+            if(Directory.Exists(target))
                 throw new ArgumentException(String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileOrFolderAlreadyExists, CultureInfo.CurrentUICulture), target));
 
             Directory.CreateDirectory(target);
-            var directory = new DirectoryInfo(source);
+            DirectoryInfo directory = new DirectoryInfo(source);
 
             // Copy files
-            foreach (FileInfo file in directory.GetFiles())
+            foreach(FileInfo file in directory.GetFiles())
             {
                 file.CopyTo(Path.Combine(target, file.Name));
             }
 
             // Now recurse to child directories
-            foreach (DirectoryInfo child in directory.GetDirectories())
+            foreach(DirectoryInfo child in directory.GetDirectories())
             {
                 RecursivelyCopyDirectory(child.FullName, Path.Combine(target, child.Name));
             }
         }
 
         /// <summary>
-        ///     Canonicalizes a file name, including:
-        ///     - determines the full path to the file
-        ///     - casts to upper case
-        ///     Canonicalizing a file name makes it possible to compare file names using simple simple string comparison.
-        ///     Note: this method does not handle shared drives and UNC drives.
+        /// Canonicalizes a file name, including:
+        ///  - determines the full path to the file
+        ///  - casts to upper case
+        /// Canonicalizing a file name makes it possible to compare file names using simple simple string comparison.
+        /// 
+        /// Note: this method does not handle shared drives and UNC drives.
         /// </summary>
         /// <param name="anyFileName">A file name, which can be relative/absolute and contain lower-case/upper-case characters.</param>
         /// <returns>Canonicalized file name.</returns>
@@ -948,7 +956,7 @@ namespace Microsoft.VisualStudio.Project
         {
             // Get absolute path
             // Note: this will not handle UNC paths
-            var fileInfo = new FileInfo(anyFileName);
+            FileInfo fileInfo = new FileInfo(anyFileName);
             string fullPath = fileInfo.FullName;
 
             // Cast to upper-case
@@ -959,13 +967,13 @@ namespace Microsoft.VisualStudio.Project
 
 
         /// <summary>
-        ///     Determines if a file is a template.
+        /// Determines if a file is a template.
         /// </summary>
         /// <param name="fileName">The file to check whether it is a template file</param>
         /// <returns>true if the file is a template file</returns>
         internal static bool IsTemplateFile(string fileName)
         {
-            if (String.IsNullOrEmpty(fileName))
+            if(String.IsNullOrEmpty(fileName))
             {
                 return false;
             }
@@ -975,25 +983,23 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
-        /// <param name="hierarchy">
-        ///     The hierarchy whose configuration is requested.  This method calls into
-        ///     native code and may be called on a background thread, so make sure the IVsHierarchy passed is
-        ///     safe to use for that sort of interop.
-        /// </param>
+        /// <param name="hierarchy">The hierarchy whose configuration is requested.  This method calls into 
+        /// native code and may be called on a background thread, so make sure the IVsHierarchy passed is 
+        /// safe to use for that sort of interop.</param>
         /// <param name="configuration">The name of the active configuration.</param>
         /// <param name="platform">The name of the platform.</param>
         /// <returns>true if successfull.</returns>
-        internal static bool TryGetActiveConfigurationAndPlatform(IServiceProvider serviceProvider, IVsHierarchy hierarchy, out string configuration, out string platform)
+        internal static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, IVsHierarchy hierarchy, out string configuration, out string platform)
         {
-            if (serviceProvider == null)
+            if(serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
 
-            if (hierarchy == null)
+            if(hierarchy == null)
             {
                 throw new ArgumentNullException("hierarchy");
             }
@@ -1001,20 +1007,20 @@ namespace Microsoft.VisualStudio.Project
             configuration = String.Empty;
             platform = String.Empty;
 
-            var solutionBuildManager = serviceProvider.GetService(typeof (SVsSolutionBuildManager)) as IVsSolutionBuildManager2;
+            IVsSolutionBuildManager2 solutionBuildManager = serviceProvider.GetService(typeof(SVsSolutionBuildManager)) as IVsSolutionBuildManager2;
 
-            if (solutionBuildManager == null)
+            if(solutionBuildManager == null)
             {
                 return false;
             }
 
-            var activeConfigs = new IVsProjectCfg[1];
+            IVsProjectCfg[] activeConfigs = new IVsProjectCfg[1];
             ErrorHandler.ThrowOnFailure(solutionBuildManager.FindActiveProjectCfg(IntPtr.Zero, IntPtr.Zero, hierarchy, activeConfigs));
 
             IVsProjectCfg activeCfg = activeConfigs[0];
 
             // Can it be that the activeCfg is null?
-            Debug.Assert(activeCfg != null, "Cannot find the active configuration");
+            System.Diagnostics.Debug.Assert(activeCfg != null, "Cannot find the active configuration");
 
             string canonicalName;
             ErrorHandler.ThrowOnFailure(activeCfg.get_CanonicalName(out canonicalName));
@@ -1023,36 +1029,28 @@ namespace Microsoft.VisualStudio.Project
         }
 
         /// <summary>
-        ///     Determines whether the shell is in command line mode.
+        /// Determines whether the shell is in command line mode.
         /// </summary>
         /// <param name="serviceProvider">A reference to a Service Provider.</param>
         /// <returns>true if the shell is in command line mode. false otherwise.</returns>
-        [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal static bool IsShellInCommandLineMode(IServiceProvider serviceProvider)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal static bool IsShellInCommandLineMode(System.IServiceProvider serviceProvider)
         {
-            if (serviceProvider == null)
+            if(serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
 
-            var shell = serviceProvider.GetService(typeof (SVsShell)) as IVsShell;
-            if (shell == null)
+            IVsShell shell = serviceProvider.GetService(typeof(SVsShell)) as IVsShell;
+            if(shell == null)
             {
                 throw new InvalidOperationException();
             }
 
             object isInCommandLineModeAsObject;
-            ErrorHandler.ThrowOnFailure(shell.GetProperty((int) __VSSPROPID.VSSPROPID_IsInCommandLineMode, out isInCommandLineModeAsObject));
+            ErrorHandler.ThrowOnFailure(shell.GetProperty((int)__VSSPROPID.VSSPROPID_IsInCommandLineMode, out isInCommandLineModeAsObject));
 
-            return ((bool) isInCommandLineModeAsObject);
-        }
-
-        internal static void CheckNotNull(object value)
-        {
-            if (value == null)
-            {
-                throw new InvalidOperationException();
-            }
+            return ((bool)isInCommandLineModeAsObject);
         }
     }
 }

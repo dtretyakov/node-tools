@@ -49,7 +49,7 @@ a particular purpose and non-infringement.
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using EnvDTE;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Microsoft.VisualStudio.Project.Automation
@@ -58,8 +58,11 @@ namespace Microsoft.VisualStudio.Project.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OANestedProjectItem : OAProjectItem<NestedProjectNode>
     {
-        private readonly EnvDTE.Project _nestedProject;
+        #region fields
+        EnvDTE.Project nestedProject;
+        #endregion
 
+        #region ctors
         public OANestedProjectItem(OAProject project, NestedProjectNode node)
             : base(project, node)
         {
@@ -69,33 +72,40 @@ namespace Microsoft.VisualStudio.Project.Automation
             }
 
             object nestedproject;
-            if (ErrorHandler.Succeeded(node.NestedHierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int) __VSHPROPID.VSHPROPID_ExtObject, out nestedproject)))
+            if(ErrorHandler.Succeeded(node.NestedHierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out nestedproject)))
             {
-                _nestedProject = nestedproject as EnvDTE.Project;
+                this.nestedProject = nestedproject as EnvDTE.Project;
             }
         }
 
+        #endregion
+
+        #region overridden methods
         /// <summary>
-        ///     Returns the collection of project items defined in the nested project
+        /// Returns the collection of project items defined in the nested project
         /// </summary>
-        public override ProjectItems ProjectItems
+        public override EnvDTE.ProjectItems ProjectItems
         {
             get
             {
-                if (_nestedProject != null)
+                if(this.nestedProject != null)
                 {
-                    return _nestedProject.ProjectItems;
+                    return this.nestedProject.ProjectItems;
                 }
                 return null;
             }
         }
 
         /// <summary>
-        ///     Returns the nested project.
+        /// Returns the nested project.
         /// </summary>
         public override EnvDTE.Project SubProject
         {
-            get { return _nestedProject; }
+            get
+            {
+                return this.nestedProject;
+            }
         }
+        #endregion
     }
 }

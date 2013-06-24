@@ -68,8 +68,6 @@ namespace Microsoft.VisualStudio.Project
     {
         #region static fiels
         private static Dictionary<string, int> extensionIcons;
-        private bool _isLinkFile;
-
         #endregion
 
         #region overriden Properties
@@ -699,19 +697,6 @@ namespace Microsoft.VisualStudio.Project
             {
                 this.SetEditLabel(value);
             }
-        }
-
-        public override bool IsLinkFile
-        {
-            get
-            {
-                return _isLinkFile;
-            }
-        }
-
-        internal void SetIsLinkFile(bool value)
-        {
-            _isLinkFile = value;
         }
 
         /// <summary>

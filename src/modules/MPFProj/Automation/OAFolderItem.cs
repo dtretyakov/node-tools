@@ -54,32 +54,40 @@ using EnvDTE;
 namespace Microsoft.VisualStudio.Project.Automation
 {
     /// <summary>
-    ///     Represents an automation object for a folder in a project
+    /// Represents an automation object for a folder in a project
     /// </summary>
     [SuppressMessage("Microsoft.Interoperability", "CA1405:ComVisibleTypeBaseTypesShouldBeComVisible")]
     [ComVisible(true), CLSCompliant(false)]
     public class OAFolderItem : OAProjectItem<FolderNode>
     {
+        #region ctors
         public OAFolderItem(OAProject project, FolderNode node)
             : base(project, node)
         {
         }
 
+        #endregion
+
+        #region overridden methods
         public override ProjectItems Collection
         {
             get
             {
-                return UIThread.DoOnUIThread(delegate
-                    {
-                        ProjectItems items = new OAProjectItems(Project, Node);
-                        return items;
-                    });
+                return UIThread.DoOnUIThread(delegate()
+                {
+                    ProjectItems items = new OAProjectItems(this.Project, this.Node);
+                    return items;
+                });
             }
         }
 
         public override ProjectItems ProjectItems
         {
-            get { return Collection; }
+            get
+            {
+                return this.Collection;
+            }
         }
+        #endregion
     }
 }
