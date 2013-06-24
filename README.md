@@ -1,6 +1,8 @@
 # Node.js Tools for Visual Studio 2012
 
-*Node Tools* is an extension which provides support for editing and debugging node.js applications.
+*Node Tools* is extension for Visual Studio which provides support for editing and debugging node.js applications.
+
+[Node.js Tools on Visual Studio Gallery](http://visualstudiogallery.msdn.microsoft.com/885a8a68-e38b-4e6a-b96d-083d5572b645)
 
 ## Table Of Contents
 * [Features](#features)
@@ -39,7 +41,7 @@ Installation process is really straightforward:
 
 ### Node Tools Settings
 
-Node Tools can automatically determine node.exe interpreter location, but if you want to launch concrete node.js interpreter version you can do that in the Tools -> Options menu in the Node.js Tools dialog.
+Node Tools can automatically determine node.exe interpreter location, but if you want to launch concrete node.js interpreter version you can do that by click on _Tools -> Options_ menu in the _Node.js Tools_ dialog.
 Here you can change following settings:
 
 * Node.js location
@@ -63,14 +65,16 @@ Here you can change following settings:
 
 ## Contribution
 
-Your feedback are very welcome. Please feel free to create issues and write you comments.
-If you want to provide code contribution please fork this project and create a pull request.
+Your feedback is very welcome. Please feel free to [create issues and write you comments](https://github.com/dtretyakov/node-tools/issues).
 
-### Launching Project
+If you want to provide code contribution please fork this repository and create a pull request.
 
-* Clone a repository and open a NodeTools.sln
-* Set NodeTools project as startup and open project properties
-* In the Debug screen set _Start external program_ and select devenv.exe, in the _Command line arguments_ set /RootSuffix Exp
+#### Launching Project
+
+* Clone this repository and open NodeTools.sln
+* Set _NodeTools_ project as startup and open project properties
+* In the Debug screen check _Start external program_ and choose devenv.exe path
+* Also in the _Command line arguments_ set _/RootSuffix Exp_
 
 ## License
 
