@@ -110,6 +110,9 @@
   <ItemGroup>
     <None Include="Key.snk" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\imagelist.bmp" />
+  </ItemGroup>
   <PropertyGroup>
     <ProjectBasePath>..\modules\MPFProj\</ProjectBasePath>
   </PropertyGroup>

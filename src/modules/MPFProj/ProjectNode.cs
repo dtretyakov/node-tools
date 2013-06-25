@@ -653,7 +653,7 @@ namespace Microsoft.VisualStudio.Project
         /// <summary>
         /// Gets an ImageHandler for the project node.
         /// </summary>
-        public ImageHandler ImageHandler
+        public virtual ImageHandler ImageHandler
         {
             get
             {
