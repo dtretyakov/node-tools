@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace ProjectSystem.Project
 {
-    internal class NodeBuildableProjectConfig : BuildableProjectConfig
+    internal sealed class NodeBuildableProjectConfig : BuildableProjectConfig
     {
         private readonly EventSinkCollection _callbacks = new EventSinkCollection();
 

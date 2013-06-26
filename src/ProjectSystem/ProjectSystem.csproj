@@ -88,6 +88,10 @@
     <Compile Include="Infrastructure\NodeSettingsProvider.cs" />
     <Compile Include="ProjectGuids.cs" />
     <Compile Include="ProjectConstants.cs" />
+    <Compile Include="Project\Automation\NodeOAFileItem.cs" />
+    <Compile Include="Project\Automation\NodeOAFolderItem.cs" />
+    <Compile Include="Project\Automation\NodeOAProject.cs" />
+    <Compile Include="Project\Automation\NodeOAProjectItems.cs" />
     <Compile Include="Project\IProjectLauncher.cs" />
     <Compile Include="Project\NodeBuildableProjectConfig.cs" />
     <Compile Include="Project\NodeConfigProvider.cs" />

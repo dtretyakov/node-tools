@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Project;
 namespace ProjectSystem.Project
 {
     [Guid(ProjectGuids.NodeProjectFactoryString)]
-    public class NodeProjectFactory : ProjectFactory
+    public sealed class NodeProjectFactory : ProjectFactory
     {
         private readonly ProjectPackage _package;
 

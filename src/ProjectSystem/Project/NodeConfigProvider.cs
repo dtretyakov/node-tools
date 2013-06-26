@@ -2,7 +2,7 @@
 
 namespace ProjectSystem.Project
 {
-    public class NodeConfigProvider : ConfigProvider
+    public sealed class NodeConfigProvider : ConfigProvider
     {
         private readonly NodeProjectNode _projectNode;
 

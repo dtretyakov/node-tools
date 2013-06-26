@@ -37,8 +37,8 @@ namespace NodeTools
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideProjectFactory(typeof (NodeProjectFactory), null, ProjectConstants.ProjectFilter,
         ProjectConstants.ProjectExtension, ProjectConstants.ProjectExtension, ".\\NullPath", LanguageVsTemplate = NodeConstants.LanguageName)]
-    [ProvideToolWindow(typeof (ConsoleToolWindow), Style = VsDockStyle.Tabbed, Window = "{34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3}", Orientation = ToolWindowOrientation.Right)]
-    [ProvideToolWindowVisibility(typeof (ConsoleToolWindow), "f1536ef8-92ec-443c-9ed7-fdadf150da82")]
+    //[ProvideToolWindow(typeof (ConsoleToolWindow), Style = VsDockStyle.Tabbed, Window = "{34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3}", Orientation = ToolWindowOrientation.Right)]
+    //[ProvideToolWindowVisibility(typeof (ConsoleToolWindow), "f1536ef8-92ec-443c-9ed7-fdadf150da82")]
     [ProvideOptionPage(typeof(GeneralOptionPage), "NodeTools", "General", 113, 114, true)]
     [ProvideObject(typeof (GeneralPropertyPage),RegisterUsing = RegistrationMethod.CodeBase)]
     [ProvideDebugEngine(NodeConstants.LanguageName, typeof (AD7ProgramProvider), typeof (AD7Engine), Guids.DebugEngineString)]

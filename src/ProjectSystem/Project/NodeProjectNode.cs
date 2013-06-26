@@ -7,6 +7,7 @@ using Common.Ioc;
 using Microsoft.VisualStudio.Project;
 using Microsoft.VisualStudio.Shell.Interop;
 using ProjectSystem.Infrastructure;
+using ProjectSystem.Project.Automation;
 using Utilities = ProjectSystem.Infrastructure.Utilities;
 
 namespace ProjectSystem.Project
@@ -162,6 +163,15 @@ namespace ProjectSystem.Project
         {
             // Project does not support references.
             return null;
+        }
+
+        /// <summary>
+        ///     Creates a new automation object.
+        /// </summary>
+        /// <returns>Automation object.</returns>
+        public override object GetAutomationObject()
+        {
+            return new NodeOAProject(this);
         }
 
         protected override void Dispose(bool disposing)
