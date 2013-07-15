@@ -43,7 +43,8 @@ namespace DebugEngine.Node
                     UseShellExecute = false,
                     Arguments = args,
                     WorkingDirectory = directory,
-                    RedirectStandardError = true
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
                 };
 
             Debug.WriteLine("Launching: {0} {1}", processInfo.FileName, processInfo.Arguments);
@@ -56,6 +57,7 @@ namespace DebugEngine.Node
 
             _process.Exited += OnProcessExited;
             _process.ErrorDataReceived += OnProcessOutputData;
+            _process.OutputDataReceived += OnProcessOutputData;
         }
 
         internal string Directory
@@ -229,6 +231,7 @@ namespace DebugEngine.Node
         public void Start()
         {
             _process.Start();
+            _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
 
             EventHandler<EventArgs> threadCreated = ThreadCreated;
