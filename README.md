@@ -63,6 +63,17 @@ Here you can change following settings:
 * Debug port
 * Startup file
 
+### Node.js Intellisense Setup (VS 2012)
+
+1. Download the nodejs reference library zip file [here](https://bitbucket.org/kurouninn/node.js-visualstudio-intellisense/get/master.zip)
+1. Add a folder to your project called *~/scripts* 
+1. Extract the contents of the zip to your *~/scripts* folder
+1. Navigate to the [Tools] > [Options] > Text Editor > JavaScript > IntelliSense > References options
+1. Select "Implicit (Web)" from the Reference Group dropdown at the top 
+1. And at the bottom in the "Add a reference to the current Group" text box put *~/Scripts/node.js* and click add.
+
+You should now have intellisense in your node scripts.
+
 ## Contribution
 
 Your feedback is very welcome. Please feel free to [create issues and write you comments](https://github.com/dtretyakov/node-tools/issues).
