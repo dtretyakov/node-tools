@@ -2,7 +2,11 @@
 
 *Node Tools* is extension for Visual Studio which provides support for editing and debugging node.js applications.
 
-[Node.js Tools on Visual Studio Gallery](http://visualstudiogallery.msdn.microsoft.com/885a8a68-e38b-4e6a-b96d-083d5572b645)
+----
+
+**_Thanks for all your contributions. It's time to move to [Node.js Tools for Visual Studio](https://nodejstools.codeplex.com/)._**
+
+----
 
 ## Table Of Contents
 * [Features](#features)
