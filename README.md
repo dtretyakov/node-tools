@@ -1,6 +1,4 @@
-# Node.js Tools for Visual Studio 2012
-
-*Node Tools* is extension for Visual Studio which provides support for editing and debugging node.js applications.
+*Node.js Tools for Visual Studio* is extension for Visual Studio which provides support for editing and debugging node.js applications.
 
 ----
 
