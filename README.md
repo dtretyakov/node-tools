@@ -2,7 +2,7 @@
 
 ----
 
-**_Thanks for all your contributions. It's time to move to [Node.js Tools for Visual Studio](https://nodejstools.codeplex.com/)._**
+**_Thanks for all your contributions. It's time to move to [Node.js Tools for Visual Studio](https://github.com/Microsoft/nodejstools)._**
 
 ----
 
